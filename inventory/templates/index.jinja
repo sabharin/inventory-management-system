@@ -42,6 +42,10 @@
                                 <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">-1</button>
                             </form>
                         </td>
+                        {% else %}
+                        <td class="py-2 px-4">
+                            <a href="{{ url_for('delete', prod_id=product[0], type='product') }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</a>
+                        </td>
                         {% endif %}
                         <td class="py-2 px-4">
                             <form action="{{ url_for('add', prod_id=product[0], type='product') }}" method="POST" class="inline-form">
