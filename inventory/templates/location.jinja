@@ -1,45 +1,53 @@
 {% extends 'base-template.jinja' %}
 {% block content %}
-<div class="container">
-    <table class="table">
-        <thead><th scope="col">Location ID</th><th scope="col">Location Name</th><th></th></thead>
+<div class="container mx-auto p-4">
+    <table class="min-w-full bg-white shadow-md rounded-lg">
+        <thead class="bg-gray-200">
+            <tr><th class="py-2 px-4">Location ID</th><th class="py-2 px-4">Location Name</th><th colspan="2" class="py-2 px-4">Actions</th></tr>
+        </thead>
         <tbody>
             {% for location in warehouses %}
-            <tr>
-                <td>{{ location[0] }}</td><td>{{ location[1] }}</td>
-                <td>
-                    <a href="{{ url_for('delete', loc_id=location[0], type='location') }}">
-                        <button name="button" type="button" class="btn btn-danger" value="delete">delete</button><br>
-                    </a>
+            <tr class="border-b">
+                <td class="py-2 px-4">{{ location[0] }}</td>
+                <td class="py-2 px-4">{{ location[1] }}</td>
+                <td class="py-2 px-4">
+                    <a href="{{ url_for('delete', loc_id=location[0], type='location') }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</a>
                 </td>
-                <td>
-                    <button name="button" type="button" class="btn btn-success" value="edit" data-toggle="modal" data-target="#edit_{{ location[0] }}">edit</button><br>
-                    <div id="edit_{{ location[0] }}" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="trans_message" aria-hidden="true">
-                    <form action="{{ url_for('edit', type='location') }}" method="post">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-body"><input name="loc_name" placeholder="{{ location[1] }}"></div>
-                                <div class="modal-footer">
-                                    <input name="loc_id" value="{{ location[0] }}" hidden aria-hidden="true">
-                                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary">Save changes</button>
+                <td class="py-2 px-4">
+                    <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" onclick="openEditModal('edit_{{ location[0] }}')">Edit</button>
+                    <div id="edit_{{ location[0] }}" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+                        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                            <form action="{{ url_for('edit', type='location') }}" method="post">
+                                <div class="mb-4">
+                                    <input name="loc_name" placeholder="{{ location[1] }}" class="w-full px-3 py-2 border rounded">
                                 </div>
-                            </div>
+                                <div class="flex justify-end">
+                                    <input name="loc_id" value="{{ location[0] }}" hidden>
+                                    <button type="button" onclick="closeEditModal('edit_{{ location[0] }}')" class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">Close</button>
+                                    <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 ml-2">Save</button>
+                                </div>
+                            </form>
                         </div>
-                    </form>
                     </div>
                 </td>
             </tr>
             {% endfor %}
-            <!-- Inserting data -->
             <tr>
                 <form action="{{ url_for('location') }}" method="POST">
                     <td></td>
-                    <td><input name="warehouse_name" placeholder="Location name" required autofocus></td>
-                    <td><input type="submit" class="btn btn-info btn-group-toggle" value="submit" /><br></td>
+                    <td class="py-2 px-4"><input name="warehouse_name" placeholder="Location name" required class="w-full px-3 py-2 border rounded"></td>
+                    <td class="py-2 px-4"><input type="submit" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" value="Submit"></td>
                 </form>
             </tr>
         </tbody>
     </table>
 </div>
+<script>
+    function openEditModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+    }
+    function closeEditModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+</script>
 {% endblock %}

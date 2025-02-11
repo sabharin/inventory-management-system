@@ -1,9 +1,15 @@
-<!-- Raises alerts and messages on DB requests -->
-<div id="trans_message" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="trans_message" aria-hidden="true">
-    <div class="modal-body">
-        <p>{{ transaction_message }}</p>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+<div id="trans_message" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="modal-body">
+            <p>{{ transaction_message }}</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="closeModal('trans_message')" class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">Close</button>
+        </div>
     </div>
 </div>
+<script>
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+</script>

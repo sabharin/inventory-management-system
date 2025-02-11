@@ -3,7 +3,7 @@ import os
 import sqlite3
 from pathlib import Path
 
-from flask import Flask, redirect, render_template, request, g
+from flask import Flask, redirect, render_template, request, g, url_for
 
 DATABASE_NAME = "inventory.sqlite"
 _DATABASE_PATH = Path(__file__).parent.parent / DATABASE_NAME
@@ -129,16 +129,15 @@ def delete():
     
     return redirect(VIEWS["Summary"])
 
-@app.route("/reduce")
-def reduce():
+@app.route('/reduce/<int:prod_id>/<string:type>', methods=['POST'])
+def reduce(prod_id, type):
     """Reduce stock quantity from a specific product."""
-    product_id = request.args.get("prod_id")
 
     db = get_db()
     
     # Fetch current stock
     current_stock = db.execute(
-        "SELECT prod_quantity, unallocated_quantity FROM products WHERE prod_id = ?", (product_id,)
+        "SELECT prod_quantity, unallocated_quantity FROM products WHERE prod_id = ?", (prod_id,)
     ).fetchone()
     
     if not current_stock:
@@ -155,29 +154,20 @@ def reduce():
 
     db.execute(
         "UPDATE products SET prod_quantity = ?, unallocated_quantity = ? WHERE prod_id = ?",
-        (new_quantity, new_unallocated, product_id),
+        (new_quantity, new_unallocated, prod_id),
     )
     db.commit()
     
-    warehouse = db.execute("SELECT * FROM location").fetchall()
-    products = db.execute("SELECT * FROM products").fetchall()
-    q_data = db.execute(
-        "SELECT prod_name, unallocated_quantity, prod_quantity FROM products"
-    ).fetchall()
+    return redirect(VIEWS["Summary"])  # Redirect back to the index page
 
-    return render_template(
-        "index.jinja", link=VIEWS, title="Summary", warehouses=warehouse, products=products, summary=q_data
-    )
-
-@app.route("/add")
-def add():
+@app.route('/add/<int:prod_id>/<string:type>', methods=['POST'])
+def add(prod_id, type):
     """Increase stock quantity for a specific product."""
-    product_id = request.args.get("prod_id")
     db = get_db()
 
     # Fetch current stock
     current_stock = db.execute(
-        "SELECT prod_quantity, unallocated_quantity FROM products WHERE prod_id = ?", (product_id,)
+        "SELECT prod_quantity, unallocated_quantity FROM products WHERE prod_id = ?", (prod_id,)
     ).fetchone()
 
     if not current_stock:
@@ -191,19 +181,11 @@ def add():
 
     db.execute(
         "UPDATE products SET prod_quantity = ?, unallocated_quantity = ? WHERE prod_id = ?",
-        (new_quantity, new_unallocated, product_id),
+        (new_quantity, new_unallocated, prod_id),
     )
     db.commit()
     
-    warehouse = db.execute("SELECT * FROM location").fetchall()
-    products = db.execute("SELECT * FROM products").fetchall()
-    q_data = db.execute(
-        "SELECT prod_name, unallocated_quantity, prod_quantity FROM products"
-    ).fetchall()
-
-    return render_template(
-        "index.jinja", link=VIEWS, title="Summary", warehouses=warehouse, products=products, summary=q_data
-    )
+    return redirect(VIEWS["Summary"])  # Redirect back to the index page
 
 @app.route("/edit", methods=["POST"])
 def edit():

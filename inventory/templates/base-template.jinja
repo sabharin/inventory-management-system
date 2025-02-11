@@ -1,61 +1,61 @@
 <!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8"/>
-        <title>{{ title }} - Inventory Management</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
-        <link rel="icon" href="{{ url_for('static', filename='site_icon.png') }}" class="js-favicon">
-        <!--div>Icons made by <a href="http://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div-->
-        <script src="{{ url_for('static', filename='jquery-3.3.1.slim.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
-        <style lang="css">
-            .slide-container { width: 100%; }
-            .slider {
-                -webkit-appearance: none;
-                width: 100%;
-                height: 10px;
-                border-radius: 5px;
-                background: #d3d3d3;
-                outline: none;
-                opacity: 0.7;
-                -webkit-transition: .2s;
-                transition: opacity .2s;
-            }
-            .slider:hover { opacity: 1; }
-            .slider::-webkit-slider-thumb {
-                -webkit-appearance: none;
-                appearance: none;
-                width: 23px;
-                height: 24px;
-                border: 0;
-                background: url({{ url_for('static', filename='range_icon.png') }});
-                cursor: pointer;
-            }
-            .slider::-moz-range-thumb {
-                width: 23px;
-                height: 24px;
-                border: 0;
-                background: url({{ url_for('static', filename='range_icon.png') }});
-                cursor: pointer;
-            }
-            .container { padding-top: 70px; }
-        </style>
-    </head>
-    <body>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="position: fixed;width: 100%;z-index: 2;">
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto bg-dark alert-light">{{ title }}</ul>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{ title }} - Inventory Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='site_icon.png') }}" class="js-favicon">
+    <style>
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .slider:hover { opacity: 1; }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 23px;
+            height: 24px;
+            border: 0;
+            background: url({{ url_for('static', filename='range_icon.png') }});
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 23px;
+            height: 24px;
+            border: 0;
+            background: url({{ url_for('static', filename='range_icon.png') }});
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-gray-800 p-4 fixed w-full z-10">
+        <div class="container mx-auto flex justify-between items-center">
+            <span class="text-white text-lg">{{ title }}</span>
+            <div class="flex space-x-4">
                 {% for k, v in link|items %}
-                <div class="col-auto">
-                  <button class="btn btn-primary" onclick="location.href='{{ v }}'" {{ 'disabled' if k == title }}>{{ k }}</button>
-                </div>
+                <a href="{{ v }}" class="bg-blue-500 text-white px-4 py-2 rounded {{ 'opacity-50 cursor-not-allowed' if k == title else 'hover:bg-blue-600' }}">{{ k }}</a>
                 {% endfor %}
             </div>
-	    </nav>
+        </div>
+    </nav>
+    <div class="container mx-auto pt-20">
         {% block content %}
         {% endblock %}
-    </body>
+    </div>
+    <script>
+        // Vanilla JavaScript for modern interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add any necessary JavaScript here
+        });
+    </script>
+</body>
 </html>
