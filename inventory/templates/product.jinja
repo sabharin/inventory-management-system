@@ -1,6 +1,30 @@
 {% extends 'base-template.jinja' %}
 {% block content %}
 <div class="container mx-auto p-4">
+    <!-- Input form for adding a new product -->
+    <form action="{{ url_for('product') }}" method="POST" class="mb-6 bg-white p-4 shadow-md rounded-lg">
+        <div class="flex gap-4">
+            <div class="flex-1">
+                <input name="prod_name" placeholder="Product Name" required class="w-full px-3 py-2 border rounded">
+            </div>
+            <div class="flex-1">
+                <input name="prod_quantity" placeholder="Quantity" required class="w-full px-3 py-2 border rounded">
+            </div>
+            <div class="flex-1">
+                <select name="loc_id" class="w-full px-3 py-2 border rounded" required>
+                    <option value="">Select Location</option>
+                    {% for loc in locations %}
+                        <option value="{{ loc[0] }}">{{ loc[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1">
+                <input type="submit" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 cursor-pointer" value="Add Product">
+            </div>
+        </div>
+    </form>
+
+    <!-- Products table -->
     <table class="min-w-full bg-white shadow-md rounded-lg">
         <thead class="bg-gray-200">
             <tr>
@@ -27,21 +51,18 @@
                     {% endif %}
                 </td>
                 <td class="py-2 px-4 text-center">
-                    <a href="{{ url_for('delete', prod_id=product[0], type='product') }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</a>
-                </td>
-                <td class="py-2 px-4 text-center">
                     <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" onclick="openEditModal('edit_{{ product[0] }}')">Edit</button>
                     <div id="edit_{{ product[0] }}" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
                         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                             <form action="{{ url_for('edit', type='product') }}" method="post">
                                 <div class="mb-4">
-                                    <input name="prod_name" placeholder="{{ product[1] }}" class="w-full px-3 py-2 border rounded">
+                                    <input name="prod_name" value="{{ product[1] }}" class="w-full px-3 py-2 border rounded">
                                 </div>
                                 <div class="mb-4">
-                                    <input name="prod_quantity" placeholder="{{ product[2] }}" type="number" class="w-full px-3 py-2 border rounded" oninput="validateQuantity(this)">
+                                    <input name="prod_quantity" value="{{ product[2] }}" type="number" class="w-full px-3 py-2 border rounded" oninput="validateQuantity(this)">
                                 </div>
                                 <div class="mb-4">
-                                    <select name="loc_id" class="w-full px-3 py-2 border rounded">
+                                    <select name="loc_id" class="w-full px-3 py-2 border rounded" required>
                                         <option value="">Select Location</option>
                                         {% for loc in locations %}
                                             <option value="{{ loc[0] }}" {% if product[3] == loc[0] %}selected{% endif %}>{{ loc[1] }}</option>
@@ -57,30 +78,11 @@
                         </div>
                     </div>
                 </td>
+                <td class="py-2 px-4 text-center">
+                    <a href="{{ url_for('delete', prod_id=product[0], type='product') }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</a>
+                </td>
             </tr>
             {% endfor %}
-            <tr>
-                <form action="{{ url_for('product') }}" method="POST">
-                    <td></td>
-                    <td class="py-2 px-4">
-                        <input name="prod_name" placeholder="Product Name" required class="w-full px-3 py-2 border rounded">
-                    </td>
-                    <td class="py-2 px-4">
-                        <input name="prod_quantity" placeholder="Quantity" required class="w-full px-3 py-2 border rounded">
-                    </td>
-                    <td class="py-2 px-4">
-                        <select name="loc_id" class="w-full px-3 py-2 border rounded">
-                            <option value="">Select Location</option>
-                            {% for loc in locations %}
-                                <option value="{{ loc[0] }}">{{ loc[1] }}</option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                    <td class="py-2 px-4">
-                        <input type="submit" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" value="Submit">
-                    </td>
-                </form>
-            </tr>
         </tbody>
     </table>
 </div>
