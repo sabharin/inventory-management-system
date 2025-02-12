@@ -19,7 +19,7 @@
 
 ## To Do
 
-- [ ] when editing a product allow for smaller numbers
+- [x] when editing a product allow for smaller numbers
 - [ ] force to set a location for new product
 - [ ] allow for floating point numbers
 - [ ] Move input bar for products and locations to be on top of page and display them in reverse order
