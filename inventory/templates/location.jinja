@@ -3,12 +3,11 @@
 <div class="container mx-auto p-4">
     <table class="min-w-full bg-white shadow-md rounded-lg">
         <thead class="bg-gray-200">
-            <tr><th class="py-2 px-4">Location ID</th><th class="py-2 px-4">Location Name</th><th colspan="2" class="py-2 px-4">Actions</th></tr>
+            <tr><th class="py-2 px-4">Location Name</th><th colspan="2" class="py-2 px-4">Actions</th></tr>
         </thead>
         <tbody>
-            {% for location in warehouses %}
+            {% for location in locations %}
             <tr class="border-b">
-                <td class="py-2 px-4">{{ location[0] }}</td>
                 <td class="py-2 px-4">{{ location[1] }}</td>
                 <td class="py-2 px-4">
                     <a href="{{ url_for('delete', loc_id=location[0], type='location') }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</a>
@@ -35,7 +34,7 @@
             <tr>
                 <form action="{{ url_for('location') }}" method="POST">
                     <td></td>
-                    <td class="py-2 px-4"><input name="warehouse_name" placeholder="Location name" required class="w-full px-3 py-2 border rounded"></td>
+                    <td class="py-2 px-4"><input name="location_name" placeholder="Location name" required class="w-full px-3 py-2 border rounded"></td>
                     <td class="py-2 px-4"><input type="submit" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" value="Submit"></td>
                 </form>
             </tr>

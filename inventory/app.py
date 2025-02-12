@@ -3,7 +3,7 @@ import os
 import sqlite3
 from pathlib import Path
 
-from flask import Flask, redirect, render_template, request, g, url_for
+from flask import Flask, redirect, render_template, request, g, jsonify
 
 DATABASE_NAME = "inventory.sqlite"
 _DATABASE_PATH = Path(__file__).parent.parent / DATABASE_NAME
@@ -36,22 +36,17 @@ def init_database():
     with get_db() as conn:
         conn.executescript(
             """
+            CREATE TABLE IF NOT EXISTS locations (
+                loc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                loc_name TEXT UNIQUE NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS products (
                 prod_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 prod_name TEXT UNIQUE NOT NULL,
                 prod_quantity INTEGER NOT NULL,
-                unallocated_quantity INTEGER
+                loc_id INTEGER,
+                FOREIGN KEY (loc_id) REFERENCES locations (loc_id)
             );
-            CREATE TABLE IF NOT EXISTS location (
-                loc_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                loc_name TEXT UNIQUE NOT NULL
-            );
-            CREATE TRIGGER IF NOT EXISTS default_prod_qty_to_unalloc_qty
-            AFTER INSERT ON products
-            FOR EACH ROW WHEN NEW.unallocated_quantity IS NULL
-            BEGIN
-                UPDATE products SET unallocated_quantity = NEW.prod_quantity WHERE rowid = NEW.rowid;
-            END;
             """
         )
 
@@ -62,50 +57,123 @@ app.init_db = init_database
 @app.route("/")
 def summary():
     db = get_db()
-    warehouse = db.execute("SELECT * FROM location").fetchall()
-    products = db.execute("SELECT * FROM products").fetchall()
-    q_data = db.execute(
-        "SELECT prod_name, unallocated_quantity, prod_quantity FROM products"
+    products = db.execute(
+        "SELECT prod_id, prod_name, prod_quantity, loc_id FROM products"
     ).fetchall()
+    locations = db.execute("SELECT loc_id, loc_name FROM locations").fetchall()
 
     return render_template(
-        "index.jinja", link=VIEWS, title="Summary", warehouses=warehouse, products=products, summary=q_data
+        "index.jinja", 
+        link=VIEWS, 
+        title="Summary", 
+        products=products, 
+        locations=locations
     )
 
+@app.route('/get-products-by-location')
+def get_products_by_location_ajax():
+    location_id = request.args.get('location_id')
+    db = get_db()
+
+    if location_id:
+        # Fetch products for the given location
+        products = db.execute(
+            "SELECT prod_id, prod_name, prod_quantity FROM products WHERE loc_id = ?",
+            (location_id,)
+        ).fetchall()
+
+        # Convert the products to a list of dictionaries
+        products_list = [dict(product) for product in products]
+        return jsonify({"products": products_list})
+    else:
+        return jsonify({"error": "Location ID is required"}), 400
+
+@app.route('/location/<int:location_id>')
+def get_products_by_location(location_id):
+    db = get_db()
+    
+    # Fetch products for the given location
+    products = db.execute(
+        "SELECT prod_id, prod_name, prod_quantity, loc_id FROM products WHERE loc_id = ?",
+        (location_id,)
+    ).fetchall()
+    
+    # Fetch all locations for the dropdown or other UI elements
+    locations = db.execute("SELECT loc_id, loc_name FROM locations").fetchall()
+    
+    # Fetch the location name for the selected location
+    location_name = db.execute(
+        "SELECT loc_name FROM locations WHERE loc_id = ?",
+        (location_id,)
+    ).fetchone()
+    
+    if not location_name:
+        return {"error": "Location not found"}, 404
+    
+    return render_template(
+        "index.jinja", 
+        link=VIEWS, 
+        title=f"Products in {location_name['loc_name']}", 
+        products=products, 
+        locations=locations,
+        selected_location_id=location_id  # Pass the selected location ID to the template
+    )
 
 @app.route("/product", methods=["POST", "GET"])
 def product():
     db = get_db()
     if request.method == "POST":
-        prod_name, quantity = request.form.get("prod_name"), request.form.get("prod_quantity")
+        prod_name = request.form.get("prod_name")
+        quantity = request.form.get("prod_quantity")
+        loc_id = request.form.get("loc_id")
+
         if prod_name and quantity and prod_name.strip():
             try:
                 quantity = int(quantity)
+                loc_id = int(loc_id) if loc_id else None
+
+                # Validate loc_id against the locations table
+                if loc_id:
+                    location_exists = db.execute(
+                        "SELECT loc_id FROM locations WHERE loc_id = ?", (loc_id,)
+                    ).fetchone()
+                    if not location_exists:
+                        return {"error": "Invalid location ID"}, 400
+
                 db.execute(
-                    "INSERT INTO products (prod_name, prod_quantity) VALUES (?, ?)",
-                    (prod_name, quantity),
+                    "INSERT INTO products (prod_name, prod_quantity, loc_id) VALUES (?, ?, ?)",
+                    (prod_name, quantity, loc_id),
                 )
                 db.commit()
             except sqlite3.IntegrityError:
-                pass  # Handle duplicate entry properly
+                return {"error": "Product name must be unique"}, 400
             return redirect(VIEWS["Stock"])
     
-    products = db.execute("SELECT * FROM products").fetchall()
-    return render_template("product.jinja", link=VIEWS, products=products, title="Stock")
+    products = db.execute(
+        "SELECT prod_id, prod_name, prod_quantity, loc_id FROM products"
+    ).fetchall()
+    locations = db.execute("SELECT loc_id, loc_name FROM locations").fetchall()
+
+    return render_template(
+        "product.jinja", link=VIEWS, products=products, locations=locations, title="Stock"
+    )
 
 
 @app.route("/location", methods=["POST", "GET"])
 def location():
     db = get_db()
     if request.method == "POST":
-        warehouse_name = request.form.get("warehouse_name")
-        if warehouse_name and warehouse_name.strip():
-            db.execute("INSERT INTO location (loc_name) VALUES (?)", (warehouse_name,))
-            db.commit()
+        location_name = request.form.get("location_name")
+        if location_name and location_name.strip():
+            try:
+                db.execute("INSERT INTO locations (loc_name) VALUES (?)", (location_name,))
+                db.commit()
+            except sqlite3.IntegrityError:
+                return {"error": "Location name must be unique"}, 400
             return redirect(VIEWS["Locations"])
     
-    warehouse_data = db.execute("SELECT * FROM location").fetchall()
-    return render_template("location.jinja", link=VIEWS, warehouses=warehouse_data, title="Locations")
+    locations = db.execute("SELECT loc_id, loc_name FROM locations").fetchall()
+    return render_template("location.jinja", link=VIEWS, locations=locations, title="Locations")
 
 
 @app.route("/delete")
@@ -123,11 +191,19 @@ def delete():
     if delete_record_type == "location":
         location_id = request.args.get("loc_id")
         if location_id:
-            db.execute("DELETE FROM location WHERE loc_id = ?", (location_id,))
+            # Check if the location is being used by any product
+            product_using_location = db.execute(
+                "SELECT prod_id FROM products WHERE loc_id = ?", (location_id,)
+            ).fetchone()
+            if product_using_location:
+                return {"error": "Location is in use and cannot be deleted"}, 400
+
+            db.execute("DELETE FROM locations WHERE loc_id = ?", (location_id,))
             db.commit()
         return redirect(VIEWS["Locations"])
     
     return redirect(VIEWS["Summary"])
+
 
 @app.route('/reduce/<int:prod_id>/<string:type>', methods=['POST'])
 def reduce(prod_id, type):
@@ -137,28 +213,28 @@ def reduce(prod_id, type):
     
     # Fetch current stock
     current_stock = db.execute(
-        "SELECT prod_quantity, unallocated_quantity FROM products WHERE prod_id = ?", (prod_id,)
+        "SELECT prod_quantity FROM products WHERE prod_id = ?", (prod_id,)
     ).fetchone()
     
     if not current_stock:
-        return {"error": "Product not found"}
+        return {"error": "Product not found"}, 404
     
-    prod_quantity, unallocated_quantity = current_stock
+    prod_quantity = current_stock["prod_quantity"]
     
     if 1 > prod_quantity:
-        return {"error": "Not enough stock available"}
+        return {"error": "Not enough stock available"}, 400
     
     # Update stock
     new_quantity = prod_quantity - 1
-    new_unallocated = max(0, unallocated_quantity - 1)  # Ensure it doesn't go negative
 
     db.execute(
-        "UPDATE products SET prod_quantity = ?, unallocated_quantity = ? WHERE prod_id = ?",
-        (new_quantity, new_unallocated, prod_id),
+        "UPDATE products SET prod_quantity = ? WHERE prod_id = ?",
+        (new_quantity, prod_id),
     )
     db.commit()
     
     return redirect(VIEWS["Summary"])  # Redirect back to the index page
+
 
 @app.route('/add/<int:prod_id>/<string:type>', methods=['POST'])
 def add(prod_id, type):
@@ -167,25 +243,25 @@ def add(prod_id, type):
 
     # Fetch current stock
     current_stock = db.execute(
-        "SELECT prod_quantity, unallocated_quantity FROM products WHERE prod_id = ?", (prod_id,)
+        "SELECT prod_quantity FROM products WHERE prod_id = ?", (prod_id,)
     ).fetchone()
 
     if not current_stock:
-        return {"error": "Product not found"}
+        return {"error": "Product not found"}, 404
 
-    prod_quantity, unallocated_quantity = current_stock
+    prod_quantity = current_stock["prod_quantity"]
 
     # Update stock
     new_quantity = prod_quantity + 1
-    new_unallocated = unallocated_quantity + 1
 
     db.execute(
-        "UPDATE products SET prod_quantity = ?, unallocated_quantity = ? WHERE prod_id = ?",
-        (new_quantity, new_unallocated, prod_id),
+        "UPDATE products SET prod_quantity = ? WHERE prod_id = ?",
+        (new_quantity, prod_id),
     )
     db.commit()
     
     return redirect(VIEWS["Summary"])  # Redirect back to the index page
+
 
 @app.route("/edit", methods=["POST"])
 def edit():
@@ -193,29 +269,39 @@ def edit():
     db = get_db()
     
     if edit_record_type == "location":
-        loc_id, loc_name = request.form.get("loc_id"), request.form.get("loc_name")
+        loc_id = request.form.get("loc_id")
+        loc_name = request.form.get("loc_name")
         if loc_name and loc_name.strip():
-            db.execute("UPDATE location SET loc_name = ? WHERE loc_id = ?", (loc_name, loc_id))
-            db.commit()
-        return redirect(VIEWS["Locations"])
+            try:
+                db.execute("UPDATE locations SET loc_name = ? WHERE loc_id = ?", (loc_name, loc_id))
+                db.commit()
+            except sqlite3.IntegrityError:
+                return {"error": "Location name must be unique"}, 400
+            return redirect(VIEWS["Locations"])
 
     if edit_record_type == "product":
-        prod_id, prod_name, prod_quantity = (
-            request.form.get("prod_id"),
-            request.form.get("prod_name"),
-            request.form.get("prod_quantity"),
-        )
+        prod_id = request.form.get("prod_id")
+        prod_name = request.form.get("prod_name")
+        prod_quantity = request.form.get("prod_quantity")
+        loc_id = request.form.get("loc_id")
+
         if prod_name and prod_name.strip():
             db.execute("UPDATE products SET prod_name = ? WHERE prod_id = ?", (prod_name, prod_id))
         if prod_quantity:
             prod_quantity = int(prod_quantity)
-            old_prod_quantity = db.execute(
-                "SELECT prod_quantity FROM products WHERE prod_id = ?", (prod_id,)
-            ).fetchone()[0]
             db.execute(
-                "UPDATE products SET prod_quantity = ?, unallocated_quantity = unallocated_quantity + ? - ? WHERE prod_id = ?",
-                (prod_quantity, prod_quantity, old_prod_quantity, prod_id),
+                "UPDATE products SET prod_quantity = ? WHERE prod_id = ?",
+                (prod_quantity, prod_id),
             )
+        if loc_id:
+            # Validate loc_id against the locations table
+            location_exists = db.execute(
+                "SELECT loc_id FROM locations WHERE loc_id = ?", (loc_id,)
+            ).fetchone()
+            if not location_exists:
+                return {"error": "Invalid location ID"}, 400
+
+            db.execute("UPDATE products SET loc_id = ? WHERE prod_id = ?", (loc_id, prod_id))
         db.commit()
         return redirect(VIEWS["Stock"])
     

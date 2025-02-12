@@ -3,7 +3,7 @@
 <div class="container mx-auto p-4">
     <h3 class="text-center text-2xl font-bold mb-4">Description</h3>
     <div class="flex flex-wrap">
-        {% if not warehouses %}
+        {% if not locations %}
         <div class="w-full md:w-1/2 p-2">
             <h3 class="text-center text-xl font-light">No Locations Data Available Yet</h3>
         </div>
@@ -14,43 +14,12 @@
                     <tr><th class="py-2 px-4">Location</th></tr>
                 </thead>
                 <tbody>
-                    {% for warehouse in warehouses %}
-                    <tr class="border-b"><td class="py-2 px-4">{{ warehouse[1] }}</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-        {% if not products %}
-        <div class="w-full md:w-1/2 p-2">
-            <h3 class="text-center text-xl font-light">No Product Data Available Yet</h3>
-        </div>
-        {% else %}
-        <div class="w-full md:w-3/4 p-2">
-            <table class="min-w-full bg-white shadow-md rounded-lg">
-                <thead class="bg-gray-200">
-                    <tr><th class="py-2 px-4">Name</th><th class="py-2 px-4">Count</th><th colspan="2" class="py-2 px-4">Actions</th></tr>
-                </thead>
-                <tbody>
-                    {% for product in products %}
-                    <tr class="border-b">
-                        <td class="py-2 px-4">{{ product[1] }}</td>
-                        <td class="py-2 px-4">{{ product[2] }}</td>
-                        {% if product[2] != 0 %}
+                    {% for location in locations %}
+                    <tr class="border-b {% if selected_location_id == location['loc_id'] %}bg-blue-100{% endif %}">
                         <td class="py-2 px-4">
-                            <form action="{{ url_for('reduce', prod_id=product[0], type='product') }}" method="POST" class="inline-form">
-                                <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">-1</button>
-                            </form>
-                        </td>
-                        {% else %}
-                        <td class="py-2 px-4">
-                            <a href="{{ url_for('delete', prod_id=product[0], type='product') }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</a>
-                        </td>
-                        {% endif %}
-                        <td class="py-2 px-4">
-                            <form action="{{ url_for('add', prod_id=product[0], type='product') }}" method="POST" class="inline-form">
-                                <button type="submit" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">+1</button>
-                            </form>
+                            <a href="#" onclick="fetchProductsByLocation({{ location['loc_id'] }}); return false;" class="text-blue-500 hover:text-blue-700">
+                                {{ location['loc_name'] }}
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -58,6 +27,82 @@
             </table>
         </div>
         {% endif %}
+        <div class="w-full md:w-3/4 p-2" id="products-container">
+            {% if not products %}
+            <h3 class="text-center text-xl font-light">No Product Data Available Yet</h3>
+            {% else %}
+            <table class="min-w-full bg-white shadow-md rounded-lg">
+                <thead class="bg-gray-200">
+                    <tr><th class="py-2 px-4">Name</th><th class="py-2 px-4">Count</th><th colspan="2" class="py-2 px-4">Actions</th></tr>
+                </thead>
+                <tbody id="products-table-body">
+                    {% for product in products %}
+                    <tr class="border-b">
+                        <td class="py-2 px-4 text-center">{{ product['prod_name'] }}</td>
+                        <td class="py-2 px-4 text-center">{{ product['prod_quantity'] }}</td>
+                        {% if product['prod_quantity'] != 0 %}
+                        <td class="py-2 px-4 text-center">
+                            <form action="{{ url_for('reduce', prod_id=product['prod_id'], type='product') }}" method="POST" class="inline-form">
+                                <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">-1</button>
+                            </form>
+                        </td>
+                        {% else %}
+                        <td class="py-2 px-4 text-center">
+                            <a href="{{ url_for('delete', prod_id=product['prod_id'], type='product') }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</a>
+                        </td>
+                        {% endif %}
+                        <td class="py-2 px-4 text-center">
+                            <form action="{{ url_for('add', prod_id=product['prod_id'], type='product') }}" method="POST" class="inline-form">
+                                <button type="submit" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">+1</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
     </div>
 </div>
+
+<script>
+    function fetchProductsByLocation(locationId) {
+        fetch(`/get-products-by-location?location_id=${locationId}`)
+            .then(response => response.json())
+            .then(data => {
+                const productsTableBody = document.getElementById('products-table-body');
+                productsTableBody.innerHTML = ''; // Clear existing rows
+
+                if (data.products.length === 0) {
+                    productsTableBody.innerHTML = '<tr><td colspan="4" class="py-2 px-4 text-center">No products found for this location.</td></tr>';
+                } else {
+                    data.products.forEach(product => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b';
+
+                        row.innerHTML = `
+                            <td class="py-2 px-4">${product.prod_name}</td>
+                            <td class="py-2 px-4">${product.prod_quantity}</td>
+                            <td class="py-2 px-4">
+                                ${product.prod_quantity !== 0 ?
+                                    `<form action="/reduce/${product.prod_id}/product" method="POST" class="inline-form">
+                                        <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">-1</button>
+                                    </form>` :
+                                    `<a href="/delete?prod_id=${product.prod_id}&type=product" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</a>`
+                                }
+                            </td>
+                            <td class="py-2 px-4">
+                                <form action="/add/${product.prod_id}/product" method="POST" class="inline-form">
+                                    <button type="submit" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">+1</button>
+                                </form>
+                            </td>
+                        `;
+
+                        productsTableBody.appendChild(row);
+                    });
+                }
+            })
+            .catch(error => console.error('Error fetching products:', error));
+    }
+</script>
 {% endblock %}
