@@ -4,6 +4,7 @@
 
 ## Table of Contents
 
+  - [To Do](#to-do)
   - [Installation](#installation)
   - [Overview](#overview)
   - [Usage](#usage)
@@ -16,15 +17,21 @@
   - [Dependencies](#dependencies)
   - [License](#license)
 
+## To Do
+
+- [ ] when editing a product allow for smaller numbers
+- [ ] force to set a location for new product
+- [ ] allow for floating point numbers
+- [ ] Move input bar for products and locations to be on top of page and display them in reverse order
+
 ## Installation
 
 Clone the git repository:
 
 ``` sourceCode console
-$ git clone https://github.com/gavindsouza/inventory-management-system.git
+$ git clone https://github.com/sabharin/inventory-management-system.git
 $ cd inventory-management-system
 ```
-![](docs/util/1.gif)
 
 Create a virtual environment and install necessary dependencies:
 
@@ -34,14 +41,10 @@ $ source ./venv/bin/activate
 $ pip install -U pip -e .
 ```
 
-![](docs/util/2.gif)
-
-
 ## Overview
 
 The _index page_ or _summary_ covers the summary of the system containing lists of products and location along with a count of unallocated products.
-On the _products page_, we can add/edit/remove products from the system. The _location page_ covers similar functionality in the context of locations or warehouses.
-On the _logistics  page_, movement of products can be performed. It also maintains the history of all transactions in a tabular form.
+On the _products page_, we can add/edit/remove products from the system. The _location page_ covers similar functionality in the context of locations
 
 ## Usage
 
@@ -50,57 +53,29 @@ On the _logistics  page_, movement of products can be performed. It also maintai
 To try out the application, run the following from the cloned directory:
 
 ``` sourceCode console
-$ flask --app inventory.app run --debug
+$ python  \path\to\app.py
 ```
 
-![](docs/util/3.gif)
-
-The application can be accessed at _localhost:5000_ in your browser
-
-![](docs/util/4.gif)
+The application can be accessed at _localhost:8001_ in your browser
 
 This view of the system can be accessed for demo purposes on installation, to start afresh remove thr inventory.sqlite file from the parent folder
-
-![](docs/util/5.gif)
 
 ### Getting Into It
 
 A new system will look like this
-
-![](docs/util/6.gif)
 
 #### Adding Products and Locations
 
 To add products, only the name and quantity are required
 Adding locations needs only the name to be added
 
-![](docs/util/7.gif)
-
-#### Moving Things Around
-
-Products can be moved into and between warehouses *only after* they have been added to the system
-
-![](docs/util/8.gif)
-
-Moving into locations
-
-![](docs/util/9.gif)
-
-Moving between locations
-
 #### Editing Existing Information
 
 Editing Product Information
 
-![](docs/util/10.gif)
-
 Editing Location Information
 
-![](docs/util/11.gif)
-
 Deleting Products and Locations on the System
-
-![](docs/util/12.gif)
 
 ## Production Setup
 
